@@ -1,0 +1,5 @@
+tmc2208.c:16:6:motorDisable	8	static
+tmc2208.c:19:6:motorEnable	8	static
+tmc2208.c:22:6:motorSetDir	16	static
+tmc2208.c:28:6:motorSetDiv	16	static
+tmc2208.c:54:6:motorSetFreq	16	static
