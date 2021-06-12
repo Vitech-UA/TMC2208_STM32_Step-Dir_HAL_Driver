@@ -13,6 +13,7 @@
 
 
 #define MOTOR_STEP_TIMER htim1
+#define CURRENT_FREQ 24000000
 
 typedef enum{
 	STEP_DIV_BY_2,

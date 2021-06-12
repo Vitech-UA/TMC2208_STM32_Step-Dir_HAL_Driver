@@ -17,6 +17,27 @@ uint8_t _motorDevider;
 MOTOR_STATUS_t _motorStatus;
 uint16_t _motorFrequency = 100;
 
+void delayInit(void) {
+	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+}
+
+void delayMs(volatile uint32_t delay) {
+	TIM2->PSC = CURRENT_FREQ / 1000 - 1;
+	TIM2->ARR = delay;
+	TIM2->EGR |= TIM_EGR_UG;
+	TIM2->CR1 |= TIM_CR1_CEN | TIM_CR1_OPM;
+	while ((TIM2->CR1) & (TIM_CR1_CEN != 0))
+		;
+}
+
+void delayUs(volatile uint32_t delay) {
+	TIM2->PSC = CURRENT_FREQ / 1000000 - 1;
+	TIM2->ARR = delay;
+	TIM2->EGR |= TIM_EGR_UG;
+	TIM2->CR1 |= TIM_CR1_CEN | TIM_CR1_OPM;
+	while ((TIM2->CR1) & (TIM_CR1_CEN != 0))
+		;
+}
 void motorDisableTMC(void) {
 	HAL_GPIO_WritePin(En_GPIO_Port, En_Pin, GPIO_PIN_SET);
 }
@@ -88,7 +109,7 @@ MOTOR_STATUS_t motorGetStatus(void) {
 }
 
 uint16_t motorGetFrequency(void) {
- return _motorFrequency;
+	return _motorFrequency;
 }
 uint8_t motorGetStepDevider(void) {
 	return _motorDevider;
@@ -118,24 +139,42 @@ void motorRotateByStep(uint32_t stepcount) {
 
 void motorRun(uint16_t freq, uint8_t dir, uint32_t steps) {
 
-	uint32_t startSteps; // К-ть кроків для плавного розгону
-	uint32_t stopSteps;  // К-ть кроків для плавного гальмування
-	uint32_t runSteps; // К-ть кроків для робочого ходу.
+	uint32_t startSteps = (int) (steps * 2 * motorGetStepDevider()) / 4; // К-ть кроків для плавного розгону
+	uint32_t stopSteps = (int) (steps * 2 * motorGetStepDevider()) / 4; // К-ть кроків для плавного гальмування
+	uint32_t runSteps = (int) (steps * 2 * motorGetStepDevider()) / 2; // К-ть кроків для робочого ходу.
+	uint16_t startStopDelay = (8000 / freq) * 250;
 
 	motorSetDir(dir);
 	motorSetFreq(100);
 	motorEnableTMC();
 	motorSetState(MOTOR_RUN);
-	//Acceleration stage
-	steps = 0;
-	for (uint16_t i = 100; i <= freq; i++) {
-		motorSetFreq(i);
-		HAL_Delay(1);
+
+	step = 0;
+	uint16_t i = motorGetFrequency();
+	while (startSteps >= step) {
+		while (motorGetFrequency() <= freq) {
+			motorSetFreq(i);
+			delayUs(startStopDelay);
+			i++;
+			if (startSteps <= step)
+				break;
+		}
 	}
 
-	for (uint16_t i = motorGetFrequency(); i >= 100; i--) {
+	step = 0;
+	while (runSteps >= step) {
+	}
+
+	step = 0;
+	while (stopSteps >= step) {
+		while (motorGetFrequency() >= 100) {
 			motorSetFreq(i);
-			HAL_Delay(1);
+			delayUs(startStopDelay);
+			i--;
+			if (stopSteps <= step)
+				break;
 		}
-    motorSetState(MOTOR_BREAK);
+	}
+
+	motorSetState(MOTOR_BREAK);
 }

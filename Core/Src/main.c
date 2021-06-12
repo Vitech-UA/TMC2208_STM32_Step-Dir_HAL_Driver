@@ -91,6 +91,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 	HAL_TIM_Base_Start_IT(&htim1);
+    delayInit();
 
 	motorSetDiv(STEP_DIV_BY_16);
 	motorSetFreq(100);
@@ -99,12 +100,13 @@ int main(void)
 
 
 
-	motorRun(2000, 1, 3600);
+	motorRun(1000, 1, 200);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
 	while (1) {
 
     /* USER CODE END WHILE */
