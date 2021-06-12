@@ -13,11 +13,11 @@
 extern TIM_HandleTypeDef MOTOR_STEP_TIMER;
 extern TIM_HandleTypeDef htim1;
 volatile uint32_t step = 0;
-uint8_t divider;
-MOTOR_STATUS_t motorStatus;
+uint8_t _motorDevider;
+MOTOR_STATUS_t _motorStatus;
+uint16_t _motorFrequency = 100;
 
-
-void motorDisable(void) {
+void motorDisableTMC(void) {
 	HAL_GPIO_WritePin(En_GPIO_Port, En_Pin, GPIO_PIN_SET);
 }
 void motorEnableTMC(void) {
@@ -34,43 +34,48 @@ void motorSetDiv(STEP_DIV_t div) {
 	case STEP_DIV_BY_2:
 		HAL_GPIO_WritePin(MS1_GPIO_Port, MS1_Pin, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(MS2_GPIO_Port, MS2_Pin, GPIO_PIN_RESET);
-		divider = 2;
+		_motorDevider = 2;
 		break;
 	case STEP_DIV_BY_4:
 		HAL_GPIO_WritePin(MS1_GPIO_Port, MS1_Pin, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(MS2_GPIO_Port, MS2_Pin, GPIO_PIN_SET);
-		divider = 4;
+		_motorDevider = 4;
 		break;
 	case STEP_DIV_BY_8:
 		HAL_GPIO_WritePin(MS1_GPIO_Port, MS1_Pin, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(MS2_GPIO_Port, MS2_Pin, GPIO_PIN_RESET);
-		divider = 8;
+		_motorDevider = 8;
 		break;
 	case STEP_DIV_BY_16:
 		HAL_GPIO_WritePin(MS1_GPIO_Port, MS1_Pin, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(MS2_GPIO_Port, MS2_Pin, GPIO_PIN_SET);
-		divider = 16;
+		_motorDevider = 16;
 		break;
 	default:
 		break;
 	}
 }
 void motorSetFreq(uint16_t freq) {
+	_motorFrequency = freq;
+	if (freq <= 100)
+		freq = 100;
 	TIM1->ARR = 1;
-	if (freq <= 0)
+	if (freq <= 0) {
 		freq = 1000;
+	}
+
 	TIM1->PSC = (int) ((24000000 / 2) / freq) / 2;
 }
 
-void motorState(MOTOR_STATE_t state) {
+void motorSetState(MOTOR_STATE_t state) {
 
 	switch (state) {
 	case MOTOR_RUN:
-		motorStatus = MOTOR_RUNNING;
-        TIM1->CR1 |= TIM_CR1_CEN;
+		_motorStatus = MOTOR_RUNNING;
+		TIM1->CR1 |= TIM_CR1_CEN;
 		break;
 	case MOTOR_BREAK:
-		motorStatus = MOTOR_STOPED;
+		_motorStatus = MOTOR_STOPED;
 		TIM1->CR1 &= ~TIM_CR1_CEN;
 		break;
 	default:
@@ -78,21 +83,59 @@ void motorState(MOTOR_STATE_t state) {
 	}
 }
 
-MOTOR_STATUS_t motorGetStatus(void){
-	return motorStatus;
+MOTOR_STATUS_t motorGetStatus(void) {
+	return _motorStatus;
 }
 
-void motorRotateByStep(uint32_t stepcount){
-  step = 0;
-  if(motorGetStatus() == MOTOR_RUNNING){
+uint16_t motorGetFrequency(void) {
+ return _motorFrequency;
+}
+uint8_t motorGetStepDevider(void) {
+	return _motorDevider;
+}
 
-  }
-  if(motorGetStatus() == MOTOR_STOPED){
-	  step = 0;
-	  motorState(MOTOR_RUN);
-	  while(step < stepcount){}
-	  motorState(MOTOR_BREAK);
+void motorRotateByStep(uint32_t stepcount) {
 
-  }
+	uint16_t steps = (2 * (stepcount * motorGetStepDevider()));
 
+	if (motorGetStatus() == MOTOR_RUNNING) {
+		step = 0;
+
+		while (step < steps) {
+		}
+		motorSetState(MOTOR_BREAK);
+	}
+	if (motorGetStatus() == MOTOR_STOPED) {
+		step = 0;
+		motorSetState(MOTOR_RUN);
+		while (step < steps) {
+		}
+		motorSetState(MOTOR_BREAK);
+
+	}
+
+}
+
+void motorRun(uint16_t freq, uint8_t dir, uint32_t steps) {
+
+	uint32_t startSteps; // К-ть кроків для плавного розгону
+	uint32_t stopSteps;  // К-ть кроків для плавного гальмування
+	uint32_t runSteps; // К-ть кроків для робочого ходу.
+
+	motorSetDir(dir);
+	motorSetFreq(100);
+	motorEnableTMC();
+	motorSetState(MOTOR_RUN);
+	//Acceleration stage
+	steps = 0;
+	for (uint16_t i = 100; i <= freq; i++) {
+		motorSetFreq(i);
+		HAL_Delay(1);
+	}
+
+	for (uint16_t i = motorGetFrequency(); i >= 100; i--) {
+			motorSetFreq(i);
+			HAL_Delay(1);
+		}
+    motorSetState(MOTOR_BREAK);
 }
