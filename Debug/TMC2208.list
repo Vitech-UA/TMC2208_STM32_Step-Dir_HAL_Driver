@@ -127,10 +127,10 @@ int main(void)
 
 
 
-	motorRun(1000, 1, 200);
+	motorRun(2000, 1, 200);
  800023a:	22c8      	movs	r2, #200	; 0xc8
  800023c:	2101      	movs	r1, #1
- 800023e:	f44f 707a 	mov.w	r0, #1000	; 0x3e8
+ 800023e:	f44f 60fa 	mov.w	r0, #2000	; 0x7d0
  8000242:	f000 fa95 	bl	8000770 <motorRun>
   /* USER CODE END 2 */
 

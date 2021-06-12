@@ -100,7 +100,7 @@ int main(void)
 
 
 
-	motorRun(1000, 1, 200);
+	motorRun(2000, 1, 200);
 
   /* USER CODE END 2 */
 
