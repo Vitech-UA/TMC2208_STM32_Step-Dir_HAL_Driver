@@ -12,9 +12,10 @@
 
 extern TIM_HandleTypeDef MOTOR_STEP_TIMER;
 extern TIM_HandleTypeDef htim1;
-
 volatile uint32_t step = 0;
 uint8_t divider;
+MOTOR_STATUS_t motorStatus;
+
 
 void motorDisable(void) {
 	HAL_GPIO_WritePin(En_GPIO_Port, En_Pin, GPIO_PIN_SET);
@@ -65,9 +66,11 @@ void motorState(MOTOR_STATE_t state) {
 
 	switch (state) {
 	case MOTOR_RUN:
+		motorStatus = MOTOR_RUNNING;
         TIM1->CR1 |= TIM_CR1_CEN;
 		break;
 	case MOTOR_BREAK:
+		motorStatus = MOTOR_STOPED;
 		TIM1->CR1 &= ~TIM_CR1_CEN;
 		break;
 	default:
@@ -75,3 +78,21 @@ void motorState(MOTOR_STATE_t state) {
 	}
 }
 
+MOTOR_STATUS_t motorGetStatus(void){
+	return motorStatus;
+}
+
+void motorRotateByStep(uint32_t stepcount){
+  step = 0;
+  if(motorGetStatus() == MOTOR_RUNNING){
+
+  }
+  if(motorGetStatus() == MOTOR_STOPED){
+	  step = 0;
+	  motorState(MOTOR_RUN);
+	  while(step < stepcount){}
+	  motorState(MOTOR_BREAK);
+
+  }
+
+}

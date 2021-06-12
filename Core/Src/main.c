@@ -91,19 +91,15 @@ int main(void) {
 
 	HAL_TIM_Base_Start_IT(&htim1);
 
-	motorSetDiv(STEP_DIV_BY_8);
-	motorSetFreq(0);
-	motorSetDir(0);
+	motorSetDiv(STEP_DIV_BY_2);
+	motorSetFreq(100);
+	motorSetDir(1);
 	motorEnableTMC();
-	motorState(MOTOR_RUN);
-	HAL_Delay(1000);
+
 	motorState(MOTOR_BREAK);
-	HAL_Delay(1000);
-	motorState(MOTOR_RUN);
-	HAL_Delay(1000);
-	motorState(MOTOR_BREAK);
-	HAL_Delay(1000);
-	motorState(MOTOR_RUN);
+
+	motorRotateByStep(800);
+
 
 	/* USER CODE END 2 */
 

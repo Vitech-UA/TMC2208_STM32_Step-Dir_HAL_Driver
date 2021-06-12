@@ -25,8 +25,13 @@ typedef enum{
 typedef enum{
 	MOTOR_RUN,
 	MOTOR_BREAK
-
 }MOTOR_STATE_t;
+
+typedef enum{
+	MOTOR_RUNNING,
+	MOTOR_STOPED,
+	MOTOR_INDLE
+}MOTOR_STATUS_t;
 
 void motorDisable(void);
 void motorEnableTMC(void);
@@ -34,5 +39,6 @@ void motorSetDir(uint8_t dir);
 void motorSetDiv(STEP_DIV_t div);
 void motorSetFreq(uint16_t freq);
 void motorState(MOTOR_STATE_t state);
-
+MOTOR_STATUS_t motorGetStatus(void);
+void motorRotateByStep(uint32_t stepcount);
 #endif /* TMC2208_H_ */
